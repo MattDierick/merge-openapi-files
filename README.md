@@ -124,34 +124,6 @@ runs-on: self-hosted
 
 ---
 
-### Option C — Run locally with `act` (for testing without pushing)
-
-[`act`](https://github.com/nektos/act) lets you run GitHub Actions workflows locally inside Docker.
-
-```bash
-# Install (macOS)
-brew install act
-
-# Simulate a pull_request_review approval event
-act pull_request_review \
-  -e .github/test-events/pr-approved.json \
-  --secret GITHUB_TOKEN=$(gh auth token)
-```
-
-Create the test event payload at `.github/test-events/pr-approved.json`:
-
-```json
-{
-  "action": "submitted",
-  "review": { "state": "approved" },
-  "pull_request": {
-    "head": { "ref": "feature/my-branch" }
-  }
-}
-```
-
----
-
 ## Adding a new API spec
 
 1. Create a new file in `oas-inputs/`, e.g. `products-api.yaml`.
