@@ -1,14 +1,17 @@
 name: Merge OpenAPI Specs
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Trigger: fires whenever a Pull Request review is submitted.
-# The job itself only runs when that review is an APPROVAL.
+# Trigger: fires whenever a push lands on main (i.e. a branch is merged via PR
+# or a direct push). Only runs when files inside oas-inputs/ have changed.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
-  pull_request_review:
-    types: [submitted]
+  push:
+    branches:
+      - main
+    paths:
+      - "oas-inputs/**"
 
-# Allow the workflow to commit the merged file back to the PR branch.
+# Allow the workflow to commit the merged file back to main.
 permissions:
   contents: write
 
@@ -17,16 +20,12 @@ jobs:
     name: Merge OpenAPI specs with Redocly CLI
     runs-on: ubuntu-latest
 
-    # Guard: skip everything unless the review state is "approved".
-    if: github.event.review.state == 'approved'
-
     steps:
-      # 1. Check out the PR's head branch so we can read inputs and write output.
-      - name: Checkout PR branch
+      # 1. Check out main so we can read inputs and write output.
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          # Use the built-in token – write permission is granted above.
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # 2. Set up Node.js (Redocly CLI requires Node ≥ 18).
@@ -60,7 +59,7 @@ jobs:
             --skip-rule=security-defined \
             --skip-rule=info-license
 
-      # 6. Commit the merged file back to the PR branch (only if changed).
+      # 6. Commit the merged file back to main (only if changed).
       - name: Commit merged spec
         run: |
           git config user.name  "github-actions[bot]"
