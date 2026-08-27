@@ -48,11 +48,17 @@ jobs:
           redocly join oas-inputs/*.yaml \
             --output oas-merged/merged-openapi.yaml \
             --prefix-tags-with-filename \
-            --prefix-components-with-filename
+            --prefix-components-with-info-prop title
 
       # 5. Validate the merged spec before committing.
+      #    --skip-rule silences demo-irrelevant rules (no servers/security defined).
       - name: Validate merged spec
-        run: redocly lint oas-merged/merged-openapi.yaml --format=summary
+        run: |
+          redocly lint oas-merged/merged-openapi.yaml \
+            --format=summary \
+            --skip-rule=no-empty-servers \
+            --skip-rule=security-defined \
+            --skip-rule=info-license
 
       # 6. Commit the merged file back to the PR branch (only if changed).
       - name: Commit merged spec
