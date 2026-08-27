@@ -1,9 +1,15 @@
 openapi: 3.0.3
 info:
-  title: Orders API
+  title: Events API
   version: 1.0.0
-  description: API for managing orders
+  description: API for managing events and attendees
 tags:
+  - name: events-api_Events
+    description: Event management operations
+    x-displayName: Events
+  - name: events-api_Attendees
+    description: Attendee registration operations
+    x-displayName: Attendees
   - name: orders-api_Orders
     description: Order management operations
     x-displayName: Orders
@@ -14,6 +20,220 @@ tags:
     description: User management operations
     x-displayName: Users
 paths:
+  /events:
+    servers: []
+    get:
+      tags:
+        - events-api_Events
+      summary: List all events
+      operationId: listEvents
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Events_API_EventStatus'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: A paginated list of events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_EventList'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+    post:
+      tags:
+        - events-api_Events
+      summary: Create a new event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Events_API_CreateEventRequest'
+      responses:
+        '201':
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_Event'
+        '400':
+          $ref: '#/components/responses/Events_API_BadRequest'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+  /events/{eventId}:
+    servers: []
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - events-api_Events
+      summary: Get an event by ID
+      operationId: getEventById
+      responses:
+        '200':
+          description: Event found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_Event'
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+    put:
+      tags:
+        - events-api_Events
+      summary: Update an event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Events_API_UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_Event'
+        '400':
+          $ref: '#/components/responses/Events_API_BadRequest'
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+    delete:
+      tags:
+        - events-api_Events
+      summary: Cancel an event
+      operationId: cancelEvent
+      responses:
+        '204':
+          description: Event cancelled successfully
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+  /events/{eventId}/attendees:
+    servers: []
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - events-api_Attendees
+      summary: List attendees for an event
+      operationId: listAttendees
+      responses:
+        '200':
+          description: List of attendees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Events_API_Attendee'
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+    post:
+      tags:
+        - events-api_Attendees
+      summary: Register an attendee to an event
+      operationId: registerAttendee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Events_API_RegisterAttendeeRequest'
+      responses:
+        '201':
+          description: Attendee registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_Attendee'
+        '400':
+          $ref: '#/components/responses/Events_API_BadRequest'
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '409':
+          $ref: '#/components/responses/Events_API_Conflict'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+  /events/{eventId}/attendees/{attendeeId}:
+    servers: []
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attendeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - events-api_Attendees
+      summary: Get an attendee registration
+      operationId: getAttendee
+      responses:
+        '200':
+          description: Attendee found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Events_API_Attendee'
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
+    delete:
+      tags:
+        - events-api_Attendees
+      summary: Cancel an attendee registration
+      operationId: cancelAttendeeRegistration
+      responses:
+        '204':
+          description: Registration cancelled successfully
+        '404':
+          $ref: '#/components/responses/Events_API_NotFound'
+        '500':
+          $ref: '#/components/responses/Events_API_InternalServerError'
   /orders:
     servers: []
     get:
@@ -301,6 +521,184 @@ paths:
           $ref: '#/components/responses/Users_API_InternalServerError'
 components:
   schemas:
+    Events_API_EventStatus:
+      type: string
+      enum:
+        - draft
+        - published
+        - cancelled
+        - completed
+      example: published
+    Events_API_Event:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - startDate
+        - endDate
+        - location
+        - capacity
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        title:
+          type: string
+          example: API Summit 2024
+        description:
+          type: string
+          example: Annual conference for API practitioners
+        status:
+          $ref: '#/components/schemas/Events_API_EventStatus'
+        startDate:
+          type: string
+          format: date-time
+          example: '2024-09-15T09:00:00Z'
+        endDate:
+          type: string
+          format: date-time
+          example: '2024-09-15T18:00:00Z'
+        location:
+          type: string
+          example: Brussels Expo, Belgium
+        capacity:
+          type: integer
+          minimum: 1
+          example: 500
+        attendeeCount:
+          type: integer
+          example: 342
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-01-10T08:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2024-06-01T10:00:00Z'
+    Events_API_EventList:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Events_API_Event'
+        total:
+          type: integer
+          example: 12
+        limit:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
+    Events_API_CreateEventRequest:
+      type: object
+      required:
+        - title
+        - startDate
+        - endDate
+        - location
+        - capacity
+      properties:
+        title:
+          type: string
+          example: API Summit 2024
+        description:
+          type: string
+          example: Annual conference for API practitioners
+        startDate:
+          type: string
+          format: date-time
+          example: '2024-09-15T09:00:00Z'
+        endDate:
+          type: string
+          format: date-time
+          example: '2024-09-15T18:00:00Z'
+        location:
+          type: string
+          example: Brussels Expo, Belgium
+        capacity:
+          type: integer
+          minimum: 1
+          example: 500
+    Events_API_UpdateEventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: API Summit 2024 — Updated
+        description:
+          type: string
+          example: Updated description
+        startDate:
+          type: string
+          format: date-time
+          example: '2024-09-16T09:00:00Z'
+        endDate:
+          type: string
+          format: date-time
+          example: '2024-09-16T18:00:00Z'
+        location:
+          type: string
+          example: Brussels Expo, Hall 5
+        capacity:
+          type: integer
+          minimum: 1
+          example: 600
+        status:
+          $ref: '#/components/schemas/Events_API_EventStatus'
+    Events_API_Attendee:
+      type: object
+      required:
+        - id
+        - eventId
+        - userId
+        - registeredAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+        eventId:
+          type: string
+          format: uuid
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        userId:
+          type: string
+          format: uuid
+          example: c3d4e5f6-a7b8-9012-cdef-123456789012
+        registeredAt:
+          type: string
+          format: date-time
+          example: '2024-07-01T14:00:00Z'
+    Events_API_RegisterAttendeeRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: c3d4e5f6-a7b8-9012-cdef-123456789012
+    Events_API_Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: NOT_FOUND
+        message:
+          type: string
+          example: The requested resource was not found
     Orders_API_OrderStatus:
       type: string
       enum:
@@ -524,6 +922,30 @@ components:
           type: string
           example: The requested resource was not found
   responses:
+    Events_API_BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Events_API_Error'
+    Events_API_NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Events_API_Error'
+    Events_API_Conflict:
+      description: Attendee already registered for this event
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Events_API_Error'
+    Events_API_InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Events_API_Error'
     Orders_API_BadRequest:
       description: Invalid request payload
       content:
@@ -561,6 +983,10 @@ components:
           schema:
             $ref: '#/components/schemas/Users_API_Error'
 x-tagGroups:
+  - name: Events API
+    tags:
+      - events-api_Events
+      - events-api_Attendees
   - name: Orders API
     tags:
       - orders-api_Orders
