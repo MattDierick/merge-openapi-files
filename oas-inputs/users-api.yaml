@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: Users API
+  version: 1.0.0
+  description: API for managing users
+
+tags:
+  - name: Users
+    description: User management operations
+
+paths:
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List all users
+      operationId: listUsers
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of users to return
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of users to skip
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: A paginated list of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Unique identifier of the user
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Users
+      summary: Get a user by ID
+      operationId: getUserById
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Users
+      summary: Update a user
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      operationId: deleteUser
+      responses:
+        "204":
+          description: User deleted successfully
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        name:
+          type: string
+          example: "Jane Doe"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-06-20T14:00:00Z"
+
+    UserList:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+          example: 42
+        limit:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
+
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        name:
+          type: string
+          example: "Jane Doe"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "jane.updated@example.com"
+        name:
+          type: string
+          example: "Jane Updated"
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "The requested resource was not found"
+
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

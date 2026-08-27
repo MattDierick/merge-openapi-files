@@ -1,0 +1,77 @@
+name: Merge OpenAPI Specs
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trigger: fires whenever a Pull Request review is submitted.
+# The job itself only runs when that review is an APPROVAL.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  pull_request_review:
+    types: [submitted]
+
+# Allow the workflow to commit the merged file back to the PR branch.
+permissions:
+  contents: write
+
+jobs:
+  merge-specs:
+    name: Merge OpenAPI specs with Redocly CLI
+    runs-on: ubuntu-latest
+
+    # Guard: skip everything unless the review state is "approved".
+    if: github.event.review.state == 'approved'
+
+    steps:
+      # 1. Check out the PR's head branch so we can read inputs and write output.
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          # Use the built-in token – write permission is granted above.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Set up Node.js (Redocly CLI requires Node ≥ 18).
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Install Redocly CLI globally.
+      - name: Install Redocly CLI
+        run: npm install -g @redocly/cli@latest
+
+      # 4. Merge all YAML files found in oas-inputs/ into a single spec.
+      #    redocly join accepts a glob, resolves $ref across files, and
+      #    prefixes duplicate operationIds/tags to avoid collisions.
+      - name: Merge specs
+        run: |
+          mkdir -p oas-merged
+          redocly join oas-inputs/*.yaml \
+            --output oas-merged/merged-openapi.yaml \
+            --prefix-tags-with-filename \
+            --prefix-components-with-filename
+
+      # 5. Validate the merged spec before committing.
+      - name: Validate merged spec
+        run: redocly lint oas-merged/merged-openapi.yaml --format=summary
+
+      # 6. Commit the merged file back to the PR branch (only if changed).
+      - name: Commit merged spec
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add oas-merged/merged-openapi.yaml
+          # Only commit when there is actually something new.
+          if git diff --staged --quiet; then
+            echo "No changes to the merged spec – skipping commit."
+          else
+            git commit -m "chore(oas): regenerate merged OpenAPI spec [skip ci]"
+            git push
+          fi
+
+      # 7. Upload the merged spec as a workflow artifact (useful for review).
+      - name: Upload merged spec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-openapi-spec
+          path: oas-merged/merged-openapi.yaml
+          retention-days: 30
